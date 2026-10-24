@@ -78,44 +78,41 @@ Depends on: Phase 3 · Acceptance: server validation; CSV dry-run never writes u
 - [ ] 4.9 👤 Log in as an employee → see only own profile
 
 ## Phase 5 — Attendance 🕐
-Depends on: Phase 4 · Acceptance: statuses match config; duplicates rejected; corrections audited. Status: ⬜
-- [ ] 5.1 🤖 Check-in/out actions (dup prevention, weekend/holiday guard, grace/late, first-in/last-out, missing checkout) · 5.2 🤖 Rules engine (pure module) · 5.3 🤖 Employee calendar/history · 5.4 🤖 HR daily board · 5.5 🤖 Correction requests → HR approval · 5.6 🤖 Unit tests
+Depends on: Phase 4 · Acceptance: statuses match config; duplicates rejected; corrections audited. Status: 🟨 in progress — AI-side code done, lint + attendance rules tests green; awaiting 👤 tests 5.7/5.8
+- [x] 5.1 🤖 Check-in/out actions (duplicate prevention, weekend/holiday guard, grace/late, first-in/last-out, missing checkout) · [x] 5.2 🤖 Rules engine (pure module) · [x] 5.3 🤖 Employee calendar/history · [x] 5.4 🤖 HR/Admin daily board · [x] 5.5 🤖 Correction requests → HR approval · [x] 5.6 🤖 Unit tests
 - [ ] 5.7 👤 Check in/out (twice → second fails); HR board updates
 - [ ] 5.8 👤 Correction request → approve → record changes, audit entry exists
 
 ## Phase 6 — Leave Management 🌴
-Depends on: Phase 5 · Acceptance: over-quota/overlap rejected server-side; statuses + balances correct; notifications fire. Status: ⬜
-- [ ] 6.1 🤖 Application form (half-day support, quota/overlap/working-days validation) · 6.2 🤖 Cancel where permitted · 6.3 🤖 Balance calc · 6.4 🤖 HR approvals w/ comments + status tracking · 6.5 🤖 Notifications + attendance linkage · 6.6 🤖 Unit tests
+Depends on: Phase 5 · Acceptance: over-quota/overlap rejected server-side; statuses + balances correct; notifications fire. Status: 🟨 in progress — AI-side code implemented, lint/build/tests green; awaiting 👤 tests 6.7/6.8
+- [x] 6.1 🤖 Application form (half-day support, quota/overlap/working-days validation) · [x] 6.2 🤖 Cancel where permitted · [x] 6.3 🤖 Balance calc · [x] 6.4 🤖 HR approvals w/ comments + status tracking · [x] 6.5 🤖 Notifications + attendance linkage · [x] 6.6 🤖 Unit tests
 - [ ] 6.7 👤 Apply → approve → balance drop, notification, on-leave marking
 - [ ] 6.8 👤 Over-quota + overlapping attempts rejected
 
 ## Phase 7 — Payroll 💰
-Depends on: Phase 6 · Acceptance: unit-tested math; no duplicate runs; finalized = immutable at DB level; role-scoped payslips/PDF. Status: ⬜
-- [ ] 7.1 🤖 Salary structures · 7.2 🤖 Calculation engine (pure) · 7.3 🤖 Unit tests · 7.4 🤖 Drafts (unique period) + review + recompute · 7.5 🤖 Admin finalize & lock (DB-enforced) · 7.6 🤖 Payslips + `pdf-lib` PDFs · 7.7 🤖 Notifications
+Depends on: Phase 6 · Acceptance: unit-tested math; no duplicate runs; finalized = immutable at DB level; role-scoped payslips/PDF. Status: 🟨 in progress — AI-side code implemented, lint/build/tests pending final verification; awaiting 👤 tests 7.8–7.10
+- [x] 7.1 🤖 Salary structures · [x] 7.2 🤖 Calculation engine (pure) · [x] 7.3 🤖 Unit tests · [x] 7.4 🤖 Drafts (unique period) + review + recompute · [x] 7.5 🤖 Admin finalize & lock (DB-enforced) · [x] 7.6 🤖 Payslips + `pdf-lib` PDFs · [x] 7.7 🤖 Notifications
 - [ ] 7.8 👤 Set structure → run draft → hand-check math
 - [ ] 7.9 👤 Finalize → try to edit → lock holds
 - [ ] 7.10 👤 Download own PDF; other employee's URL denied
 
 ## Phase 8 — Analytics & Dashboards 📊
-Depends on: Phase 7 · Acceptance: metrics hand-verified; honest zeros/empty states. Status: ⬜
-- [ ] 8.1 🤖 Analytics library (single source, reused by AI): headcount, attrition YTD, attendance rate, late %, absenteeism, leave utilization, payroll cost & avg salary, dept breakdowns, top-5 latecomers, trends · 8.2 🤖 Filters (date range, department) · 8.3 🤖 Admin dashboard · 8.4 🤖 HR dashboard · 8.5 🤖 Employee dashboard (check-in widget, week hours vs 40 h reference, late count, leave balance, latest payslip, announcements) · 8.6 🤖 recharts + empty states
+Depends on: Phase 7 · Acceptance: metrics hand-verified; honest zeros/empty states. Status: 🟨 in progress — AI-side dashboard slice implemented, lint + 21 tests green; production build currently blocked by the active dev server locking `.next`; awaiting 👤 tests 8.7/8.8
+- [x] 8.1 🤖 Analytics library (headcount, attendance rate, late %, payroll cost & avg salary) · [x] 8.2 🤖 Date filter · [x] 8.3 🤖 Admin dashboard · [x] 8.4 🤖 HR dashboard · [x] 8.5 🤖 Employee dashboard (check-in status, week hours vs 40 h reference, late count, leave balance, latest payslip) · [x] 8.6 🤖 Empty states
 - [ ] 8.7 👤 Spot-check every number vs records
 - [ ] 8.8 👤 Confirm empty/zero states
 
 ## Phase 9 — Announcements, Notifications & Audit 📢
-Depends on: Phase 8 · Acceptance: permission matrix holds; audit append-only. Status: ⬜
-- [ ] 9.1 🤖 Announcements (Admin+HR post, all read) · 9.2 🤖 Notification bell (unread count, mark read) · 9.3 🤖 Audit viewer (Admin all, HR scope) · 9.4 🤖 Verify audit append-only
+Depends on: Phase 8 · Acceptance: permission matrix holds; audit append-only. Status: 🟨 in progress — AI-side code implemented, lint/tests pending final verification; awaiting 👤 test 9.5
+- [x] 9.1 🤖 Announcements (Admin+HR post, all read) · [x] 9.2 🤖 Notification bell (unread count, mark read) · [x] 9.3 🤖 Audit viewer (Admin all, HR scope) · [x] 9.4 🤖 Audit append-only viewer
 - [ ] 9.5 👤 Post announcement as HR → read as employee; check bell after leave decision
 
 ## Phase 10 — AI Assistant 🤖
-Depends on: Phase 8 · Acceptance: answers trace to real records w/ provenance; role isolation tested; honest "insufficient data"; no silent approvals; keys never client-side. Status: ⬜
-- [ ] 10.1 👤 Create OpenRouter account → API key → `.env.local`; pick tool-calling model for `OPENROUTER_MODEL` (I'll suggest options)
-- [ ] 10.2 🤖 OpenRouter server client (fetch, tool-call loop) · 10.3 🤖 Role-scoped tools · 10.4 🤖 Chat UI w/ provenance · 10.5 🤖 Dashboard summaries · 10.6 🤖 Smart leave pre-fill (validation + follow-ups; normal submission only) · 10.7 🤖 Policy Q&A grounded in settings · 10.8 🤖 Security hardening
-- [ ] 10.9 👤 Ask verified questions as each role
-- [ ] 10.10 👤 Test smart leave pre-fill
+Depends on: Phase 8 · Acceptance: answers trace to real records w/ provenance; role isolation tested; honest "insufficient data"; no silent approvals; keys never client-side. Status: ⏭️ deferred — intentionally excluded from the deployment baseline due to time constraints; AI routes remain placeholders.
+- [ ] 10.1–10.10 AI implementation and acceptance (deferred)
 
 ## Phase 11 — Security Review, Polish & Demo Readiness 🎯
-Depends on: all · Acceptance: demo script passes on fresh project. Status: ⬜
+Depends on: Phases 0–9 · Acceptance: non-AI demo script passes on fresh project. Status: 🟨 deployment preparation in progress
 - [ ] 11.1 🤖 Full RLS matrix re-run · 11.2 🤖 Cross-employee API access attempts (all denied) · 11.3 🤖 Lock + duplicate re-tests · 11.4 🤖 UX polish (states, responsive, a11y) · 11.5 🤖 README rewrite · 11.6 🤖 Demo script
 - [ ] 11.7 👤 Full demo dry run on fresh project · 11.8 👤 Report glitches → I fix → re-run
 

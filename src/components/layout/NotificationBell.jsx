@@ -1,0 +1,10 @@
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+export default function NotificationBell() {
+  const [open, setOpen] = useState(false); const [items, setItems] = useState([]);
+  useEffect(() => { fetch("/api/notifications").then((response) => response.ok ? response.json() : { notifications: [] }).then((data) => setItems(data.notifications ?? [])); }, []);
+  const unread = items.filter((item) => !item.read_at).length;
+  async function markRead(item) { if (!item.read_at) { await fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id }) }); setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: new Date().toISOString() } : entry)); } }
+  return <div className="relative"><button type="button" onClick={() => setOpen((value) => !value)} className="relative rounded-md p-2 text-ink-muted hover:bg-surface-muted hover:text-ink" aria-label="Notifications">🔔{unread > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger-600 px-1 text-[10px] text-white">{unread}</span>}</button>{open && <div className="absolute right-0 top-11 z-50 w-80 rounded-xl border border-border bg-surface p-4 shadow-lg"><p className="text-sm font-medium text-ink">Notifications</p>{!items.length ? <p className="mt-2 text-xs text-ink-muted">No notifications yet.</p> : <div className="mt-2 space-y-2">{items.map((item) => <div key={item.id} className={`rounded-lg p-2 text-xs ${item.read_at ? "bg-surface-muted" : "bg-brand-50"}`}><p className="font-medium">{item.title}</p><p className="mt-1 text-ink-muted">{item.body}</p>{item.link && <Link href={item.link} onClick={() => markRead(item)} className="mt-1 inline-block text-brand-700 hover:underline">Open</Link>} {!item.read_at && <button type="button" onClick={() => markRead(item)} className="mt-1 block text-brand-700 hover:underline">Mark read</button>}</div>)}</div>}</div>}</div>;
+}

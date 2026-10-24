@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { signOut } from "@/lib/auth-actions";
+import NotificationBell from "./NotificationBell";
 
 export default function Topbar({ role, userName, onMenuClick }) {
-  const [bellOpen, setBellOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -24,25 +24,7 @@ export default function Topbar({ role, userName, onMenuClick }) {
         </span>
       </div>
       <div className="flex items-center gap-2">
-        {/* Notification bell — real notifications arrive in Phase 9 */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setBellOpen((v) => !v)}
-            className="relative rounded-md p-2 text-ink-muted hover:bg-surface-muted hover:text-ink"
-            aria-label="Notifications"
-          >
-            🔔
-          </button>
-          {bellOpen && (
-            <div className="absolute right-0 top-11 w-72 rounded-xl border border-border bg-surface p-4 shadow-lg">
-              <p className="text-sm font-medium text-ink">Notifications</p>
-              <p className="mt-2 text-xs text-ink-muted">
-                No notifications yet. Leave decisions and payslip alerts will appear here.
-              </p>
-            </div>
-          )}
-        </div>
+        <NotificationBell />
         <div className="relative">
           <button
             type="button"
