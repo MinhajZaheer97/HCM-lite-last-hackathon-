@@ -105,6 +105,11 @@ export default async function EmployeeProfilePage({ params }) {
                     {profileRow && !profileRow.is_active ? "Access deactivated" : "Active"}
                   </span>
                 </div>
+                <CreateLoginButton
+                  employeeId={employee.id}
+                  employeeName={employee.full_name}
+                  hasLogin
+                />
               </div>
             ) : (
               <div>

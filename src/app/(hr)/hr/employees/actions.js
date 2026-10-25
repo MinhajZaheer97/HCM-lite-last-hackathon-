@@ -119,6 +119,29 @@ export async function createEmployeeLogin(employeeId) {
   return { ok: true, tempPassword };
 }
 
+export async function resetEmployeePassword(employeeId) {
+  await requireRole(["hr", "admin"]);
+
+  const supabase = await createClient();
+  const { data: employee } = await supabase
+    .from("employees")
+    .select("id, auth_user_id")
+    .eq("id", employeeId)
+    .single();
+
+  if (!employee) return { error: "Employee not found" };
+  if (!employee.auth_user_id) return { error: "This employee does not have a login yet" };
+
+  const tempPassword = randomPassword();
+  const { error } = await getAdmin().auth.admin.updateUserById(employee.auth_user_id, {
+    password: tempPassword,
+  });
+
+  if (error) return { error: error.message };
+
+  return { ok: true, tempPassword };
+}
+
 // ── CSV import: dry-run first, commit only valid rows after confirm ──
 export async function importCsvDryRun(csvText) {
   await requireRole(["hr", "admin"]);

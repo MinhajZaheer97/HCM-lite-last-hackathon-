@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Button, Modal } from "@/components/ui";
-import { createEmployeeLogin } from "../actions";
+import { createEmployeeLogin, resetEmployeePassword } from "../actions";
 
-export default function CreateLoginButton({ employeeId, employeeName }) {
+export default function CreateLoginButton({ employeeId, employeeName, hasLogin = false }) {
   const [busy, setBusy] = useState(false);
   const [secret, setSecret] = useState(null);
   const [error, setError] = useState("");
@@ -16,18 +16,37 @@ export default function CreateLoginButton({ employeeId, employeeName }) {
     const res = await createEmployeeLogin(employeeId);
     setBusy(false);
     if (res?.error) setError(res.error);
-    else setSecret(res.tempPassword);
+    else if (res?.tempPassword) setSecret(res.tempPassword);
+    else setError("Login was created, but no temporary password was returned. Use Reset password.");
+  }
+
+  async function reset() {
+    if (!window.confirm(`Reset the password for ${employeeName}?`)) return;
+    setBusy(true);
+    setError("");
+    const res = await resetEmployeePassword(employeeId);
+    setBusy(false);
+    if (res?.error) setError(res.error);
+    else if (res?.tempPassword) setSecret(res.tempPassword);
+    else setError("No temporary password was returned.");
   }
 
   return (
     <>
-      <Button onClick={create} disabled={busy}>
-        {busy ? "Creating…" : "Create login"}
-      </Button>
+      {!hasLogin && (
+        <Button onClick={create} disabled={busy}>
+          {busy ? "Creating…" : "Create login"}
+        </Button>
+      )}
       {error && (
         <p className="mt-2 rounded-lg border border-danger-600/30 bg-danger-50 px-3 py-2 text-sm text-danger-700">
           {error}
         </p>
+      )}
+      {hasLogin && (
+        <Button onClick={reset} disabled={busy} variant="secondary">
+          {busy ? "Resetting…" : "Reset password"}
+        </Button>
       )}
       <Modal
         open={secret !== null}
