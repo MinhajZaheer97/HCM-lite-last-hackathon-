@@ -17,23 +17,42 @@ export default function CsvImport() {
     setBusy(true);
     setError("");
     setReport(null);
-    const text = await file.text();
-    const res = await importCsvDryRun(text);
-    setBusy(false);
-    if (res?.error) setError(res.error);
-    else setReport(res);
+    try {
+      const text = await file.text();
+      const res = await importCsvDryRun(text);
+      if (res?.error) setError(res.error);
+      else if (Array.isArray(res?.valid) && Array.isArray(res?.invalid)) {
+        setReport({ valid: res.valid, invalid: res.invalid });
+      } else {
+        setError("The CSV validation response was invalid. Please try again.");
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to validate this CSV file");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function confirmImport() {
+    const validRows = report?.valid;
+    if (!Array.isArray(validRows) || validRows.length === 0) {
+      setError("There are no valid rows to import. Validate the CSV again.");
+      return;
+    }
     setBusy(true);
     setError("");
-    const res = await importCsvCommit(report.valid);
-    setBusy(false);
-    if (res?.error) setError(res.error);
-    else {
-      window.alert(`Imported ${res.imported} employee(s).`);
-      setOpen(false);
-      setReport(null);
+    try {
+      const res = await importCsvCommit(validRows);
+      if (res?.error) setError(res.error);
+      else {
+        window.alert(`Imported ${res.imported} employee(s).`);
+        setOpen(false);
+        setReport(null);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Unable to import employees");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -48,8 +67,8 @@ export default function CsvImport() {
         title="Import employees from CSV"
         footer={
           report ? (
-            <Button onClick={confirmImport} disabled={busy || report.valid.length === 0}>
-              {busy ? "Importing…" : `Confirm import (${report.valid.length} valid rows)`}
+            <Button onClick={confirmImport} disabled={busy || !report.valid?.length}>
+              {busy ? "Importing…" : `Confirm import (${report.valid?.length ?? 0} valid rows)`}
             </Button>
           ) : null
         }
@@ -79,12 +98,12 @@ export default function CsvImport() {
         {report && (
           <div className="mt-4 space-y-3">
             <div className="flex gap-2">
-              <Badge tone="success">{report.valid.length} valid</Badge>
-              <Badge tone={report.invalid.length ? "danger" : "neutral"}>
-                {report.invalid.length} invalid
+              <Badge tone="success">{report.valid?.length ?? 0} valid</Badge>
+              <Badge tone={report.invalid?.length ? "danger" : "neutral"}>
+                {report.invalid?.length ?? 0} invalid
               </Badge>
             </div>
-            {report.invalid.length > 0 && (
+            {(report.invalid?.length ?? 0) > 0 && (
               <div className="max-h-56 overflow-y-auto rounded-lg border border-border">
                 <table className="w-full text-left text-xs">
                   <thead className="border-b border-border text-ink-muted">
@@ -94,7 +113,7 @@ export default function CsvImport() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {report.invalid.map((r) => (
+                    {(report.invalid ?? []).map((r) => (
                       <tr key={r.rowNumber}>
                         <td className="px-3 py-2">{r.rowNumber}</td>
                         <td className="px-3 py-2 text-danger-700">{r.errors.join("; ")}</td>
@@ -104,9 +123,9 @@ export default function CsvImport() {
                 </table>
               </div>
             )}
-            {report.valid.length > 0 && (
+            {(report.valid?.length ?? 0) > 0 && (
               <p className="text-xs text-ink-muted">
-                {report.valid.length} row(s) will be imported after confirmation. Invalid rows are
+                {report.valid?.length ?? 0} row(s) will be imported after confirmation. Invalid rows are
                 never written; valid rows import as one all-or-nothing batch.
               </p>
             )}
