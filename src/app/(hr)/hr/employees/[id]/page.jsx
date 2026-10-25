@@ -7,8 +7,7 @@ import CreateLoginButton from "./create-login";
 
 export const metadata = { title: "Employee Profile — HCM Lite" };
 
-// 360° employee profile: personal + job info, login status, and the record
-// areas (attendance, leave, payroll) that fill in as those phases land.
+// 360° employee profile: personal + job info, login status, and records.
 export default async function EmployeeProfilePage({ params }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -25,11 +24,57 @@ export default async function EmployeeProfilePage({ params }) {
 
   if (!employee) notFound();
 
-  const { data: profileRow } = await supabase
-    .from("profiles")
-    .select("id, is_active")
-    .eq("employee_id", employee.id)
-    .maybeSingle();
+  const [
+    { data: profileRow, error: profileError },
+    { data: attendance, error: attendanceError },
+    { data: leaveRequests, error: leaveError },
+    { data: salary, error: salaryError },
+    { data: payslips, error: payslipError },
+  ] = await Promise.all([
+    supabase.from("profiles").select("id, is_active").eq("employee_id", employee.id).maybeSingle(),
+    supabase
+      .from("attendance_records")
+      .select("work_date, status, worked_minutes")
+      .eq("employee_id", employee.id)
+      .order("work_date", { ascending: false })
+      .limit(30),
+    supabase
+      .from("leave_requests")
+      .select("start_date, end_date, days, status, leave_types(name)")
+      .eq("employee_id", employee.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("salary_structures")
+      .select("basic, allowances, effective_from")
+      .eq("employee_id", employee.id)
+      .maybeSingle(),
+    supabase
+      .from("payslips")
+      .select("gross, total_deductions, net, payroll_runs(period_month, status)")
+      .eq("employee_id", employee.id)
+      .order("id", { ascending: false })
+      .limit(3),
+  ]);
+
+  const queryError = [profileError, attendanceError, leaveError, salaryError, payslipError].find(Boolean);
+  if (queryError) throw new Error(queryError.message);
+
+  const attendanceRows = attendance ?? [];
+  const leaveRows = leaveRequests ?? [];
+  const payslipRows = payslips ?? [];
+  const presentDays = attendanceRows.filter((row) =>
+    ["present", "late", "half_day"].includes(row.status),
+  ).length;
+  const leaveDays = leaveRows
+    .filter((row) => row.status === "approved")
+    .reduce((total, row) => total + Number(row.days || 0), 0);
+  const allowanceTotal = Object.values(salary?.allowances ?? {}).reduce(
+    (total, amount) => total + Number(amount || 0),
+    0,
+  );
+  const formatMoney = (amount) =>
+    Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
   const rows = [
     ["Employee code", employee.emp_code],
@@ -123,11 +168,44 @@ export default async function EmployeeProfilePage({ params }) {
         </Card>
 
         <Card>
-          <CardHeader title="Records" subtitle="Populated by later phases." />
-          <CardBody className="space-y-2 text-sm text-ink-muted">
-            <p>📅 Attendance history & corrections — Phase 5</p>
-            <p>🌴 Leave balances & request history — Phase 6</p>
-            <p>💰 Salary structure & payslips — Phase 7</p>
+          <CardHeader title="Records" subtitle="Attendance, leave, salary, and payroll summary." />
+          <CardBody className="space-y-4 text-sm">
+            <div>
+              <p className="font-medium">Attendance</p>
+              <p className="text-ink-muted">
+                {attendanceRows.length
+                  ? `${presentDays} present or late days in the latest ${attendanceRows.length} records`
+                  : "No attendance records yet."}
+              </p>
+            </div>
+            <div>
+              <p className="font-medium">Leave</p>
+              <p className="text-ink-muted">
+                {leaveRows.length
+                  ? `${leaveDays} approved day${leaveDays === 1 ? "" : "s"} · latest: ${
+                      leaveRows[0].leave_types?.name ?? "Leave request"
+                    } (${leaveRows[0].status})`
+                  : "No leave requests yet."}
+              </p>
+            </div>
+            <div>
+              <p className="font-medium">Salary structure</p>
+              <p className="text-ink-muted">
+                {salary
+                  ? `Basic ${formatMoney(salary.basic)} · allowances ${formatMoney(allowanceTotal)}`
+                  : "No salary structure configured yet."}
+              </p>
+            </div>
+            <div>
+              <p className="font-medium">Payslips</p>
+              <p className="text-ink-muted">
+                {payslipRows.length
+                  ? `${payslipRows.length} recent payslip${payslipRows.length === 1 ? "" : "s"} · latest net ${formatMoney(
+                      payslipRows[0].net,
+                    )}`
+                  : "No payslips finalized yet."}
+              </p>
+            </div>
           </CardBody>
         </Card>
       </div>
