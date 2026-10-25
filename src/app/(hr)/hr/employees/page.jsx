@@ -29,7 +29,7 @@ export default async function EmployeesPage({ searchParams }) {
   const supabase = await createClient();
   let query = supabase
     .from("employees")
-    .select("id, emp_code, full_name, email, join_date, status, auth_user_id, departments(name), designations(name)")
+    .select("id, emp_code, full_name, email, join_date, status, auth_user_id, department_id, designation_id")
     .order("emp_code");
 
   if (q) {
@@ -38,19 +38,25 @@ export default async function EmployeesPage({ searchParams }) {
   if (dept) query = query.eq("department_id", dept);
   if (status) query = query.eq("status", status);
 
-  const [{ data: employees }, { data: departments }, { data: designations }] = await Promise.all([
+  const [{ data: employees, error: employeeError }, { data: departments, error: departmentError }, { data: designations, error: designationError }] = await Promise.all([
     query,
     supabase.from("departments").select("id, name").order("name"),
     supabase.from("designations").select("id, name").order("name"),
   ]);
 
+  if (employeeError) throw new Error(`Unable to load employees: ${employeeError.message}`);
+  if (departmentError) throw new Error(`Unable to load departments: ${departmentError.message}`);
+  if (designationError) throw new Error(`Unable to load designations: ${designationError.message}`);
+
   const deptOptions = (departments ?? []).map((d) => ({ value: d.id, label: d.name }));
   const desigOptions = (designations ?? []).map((d) => ({ value: d.id, label: d.name }));
+  const departmentsById = new Map((departments ?? []).map((d) => [String(d.id), d.name]));
+  const designationsById = new Map((designations ?? []).map((d) => [String(d.id), d.name]));
 
   const displayRows = (employees ?? []).map((e) => ({
     ...e,
-    department: e.departments?.name ?? "—",
-    designation: e.designations?.name ?? "—",
+    department: departmentsById.get(String(e.department_id)) ?? "—",
+    designation: designationsById.get(String(e.designation_id)) ?? "—",
     login: e.auth_user_id ? "Yes" : "No",
   }));
 
