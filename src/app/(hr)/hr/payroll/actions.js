@@ -62,12 +62,19 @@ export async function createDraft(periodMonth) {
   }, { onConflict: "period_month" }).select("id, status").single();
   if (runError) return { error: runError.message };
   if (run.status === "finalized") return { error: "This payroll run is finalized" };
-  const [{ data: employees }, { data: salaries }, { data: attendance }, { data: leaves }] = await Promise.all([
+  const [
+    { data: employees, error: employeesError },
+    { data: salaries, error: salariesError },
+    { data: attendance, error: attendanceError },
+    { data: leaves, error: leavesError },
+  ] = await Promise.all([
     supabase.from("employees").select("id, full_name, join_date, exit_date").in("status", ["active", "probation"]),
     supabase.from("salary_structures").select("employee_id, basic, allowances").lte("effective_from", periodDate),
     supabase.from("attendance_records").select("employee_id, work_date, status").gte("work_date", `${periodMonth}-01`).lte("work_date", monthEnd),
     supabase.from("leave_requests").select("employee_id, start_date, end_date, days, status, is_half_day, leave_types(is_paid)").eq("status", "approved").lte("start_date", monthEnd).gte("end_date", `${periodMonth}-01`),
   ]);
+  const queryError = [employeesError, salariesError, attendanceError, leavesError].find(Boolean);
+  if (queryError) return { error: queryError.message };
   const salaryByEmployee = new Map((salaries ?? []).map((row) => [row.employee_id, row]));
   const attendanceByEmployee = new Map();
   for (const row of attendance ?? []) {
@@ -100,8 +107,23 @@ export async function createDraft(periodMonth) {
         unpaidLeaveDays += listWorkingDates(start, end, { weekendDays: company?.weekend_days ?? [0, 6], holidays }).length;
       }
     }
-    const result = calculatePayslip({ ...salary, workingDays: eligibleDates.length, absentDays, unpaidLeaveDays, halfDays });
-    slips.push({ run_id: run.id, employee_id: employee.id, ...result });
+    const result = calculatePayslip({
+      ...salary,
+      workingDays: eligibleDates.length,
+      absentDays,
+      unpaidLeaveDays,
+      halfDays,
+    });
+    slips.push({
+      run_id: run.id,
+      employee_id: employee.id,
+      gross: result.gross,
+      total_deductions: result.totalDeductions,
+      net: result.net,
+      days_worked: result.daysWorked,
+      lop_days: result.lopDays,
+      deduction_items: result.deductionItems,
+    });
   }
   if (slips.length) {
     const { error } = await supabase.from("payslips").upsert(slips, { onConflict: "run_id,employee_id" });

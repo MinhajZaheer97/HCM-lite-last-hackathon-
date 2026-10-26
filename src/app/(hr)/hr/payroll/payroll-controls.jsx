@@ -6,7 +6,24 @@ import { createDraft, saveSalary } from "./actions";
 export function DraftForm() {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7)); const [busy, setBusy] = useState(false); const [message, setMessage] = useState("");
   const router = useRouter();
-  async function submit(e) { e.preventDefault(); setBusy(true); const result = await createDraft(month); setBusy(false); setMessage(result?.error ?? `Draft generated for ${result.count} employee(s)`); if (!result?.error) router.refresh(); }
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true);
+    setMessage("");
+    try {
+      const result = await createDraft(month);
+      if (result?.error) {
+        setMessage(result.error);
+      } else {
+        setMessage(`Draft generated for ${result.count} employee(s)`);
+        router.refresh();
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to generate payroll draft");
+    } finally {
+      setBusy(false);
+    }
+  }
   return <form onSubmit={submit} className="flex flex-wrap items-end gap-2"><label className="text-sm">Period<input className="mt-1 block rounded-lg border border-border bg-surface px-3 py-2 text-sm" type="month" value={month} onChange={(e) => setMonth(e.target.value)} /></label><Button type="submit" disabled={busy}>{busy ? "Generating…" : "Generate draft"}</Button>{message && <span className="text-sm text-ink-muted">{message}</span>}</form>;
 }
 export function SalaryForm({ employee }) {
