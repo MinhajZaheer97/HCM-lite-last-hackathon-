@@ -43,8 +43,9 @@ Run these files in the Supabase SQL Editor in order:
 1. `supabase/migrations/001_schema.sql`
 2. `supabase/migrations/002_rls.sql`
 3. `supabase/migrations/003_triggers.sql`
+4. `supabase/migrations/004_employee_payroll_access.sql`
 
-The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, and payroll finalization locks. `supabase/rls-tests.sql` can be run afterward to verify the main access boundaries.
+The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, and payroll finalization locks. The fourth migration lets employees read the payroll run linked to their own payslips. `supabase/rls-tests.sql` can be run afterward to verify the main access boundaries.
 
 ## Netlify deployment
 

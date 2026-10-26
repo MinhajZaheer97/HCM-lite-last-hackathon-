@@ -25,6 +25,6 @@ export async function finalizePayroll(runId) {
       );
     }
   }
-  revalidatePath("/admin/payroll"); revalidatePath("/hr/payroll"); revalidatePath("/me/payslips");
+  revalidatePath("/admin/payroll"); revalidatePath("/hr/payroll"); revalidatePath("/me/dashboard"); revalidatePath("/me/payslips");
   return { ok: true };
 }

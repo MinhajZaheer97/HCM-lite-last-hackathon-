@@ -16,7 +16,14 @@ export default async function EmployeeDashboard() {
     supabase.from("attendance_records").select("worked_minutes, status").eq("employee_id", profile.employee_id).gte("work_date", weekStart.toISOString().slice(0, 10)).lte("work_date", today),
     supabase.from("leave_types").select("id, name, annual_days"),
     supabase.from("leave_requests").select("leave_type_id, days, status").eq("employee_id", profile.employee_id).in("status", ["pending", "approved"]),
-    supabase.from("payslips").select("net, payroll_runs(period_month, status)").eq("employee_id", profile.employee_id).eq("payroll_runs.status", "finalized").order("id", { ascending: false }).limit(1).maybeSingle(),
+    supabase
+      .from("payslips")
+      .select("net, payroll_runs!inner(period_month, status)")
+      .eq("employee_id", profile.employee_id)
+      .eq("payroll_runs.status", "finalized")
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   const hours = (weekRecords ?? []).reduce((sum, record) => sum + Number(record.worked_minutes ?? 0), 0) / 60;
   const used = (leaves ?? []).reduce((map, leave) => { map[leave.leave_type_id] = (map[leave.leave_type_id] ?? 0) + Number(leave.days); return map; }, {});
