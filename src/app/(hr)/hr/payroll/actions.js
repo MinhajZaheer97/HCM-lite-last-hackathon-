@@ -69,13 +69,15 @@ export async function createDraft(periodMonth) {
     { data: leaves, error: leavesError },
   ] = await Promise.all([
     supabase.from("employees").select("id, full_name, join_date, exit_date").in("status", ["active", "probation"]),
-    supabase.from("salary_structures").select("employee_id, basic, allowances").lte("effective_from", periodDate),
+    supabase.from("salary_structures").select("employee_id, basic, allowances, effective_from").lte("effective_from", monthEnd),
     supabase.from("attendance_records").select("employee_id, work_date, status").gte("work_date", `${periodMonth}-01`).lte("work_date", monthEnd),
     supabase.from("leave_requests").select("employee_id, start_date, end_date, days, status, is_half_day, leave_types(is_paid)").eq("status", "approved").lte("start_date", monthEnd).gte("end_date", `${periodMonth}-01`),
   ]);
   const queryError = [employeesError, salariesError, attendanceError, leavesError].find(Boolean);
   if (queryError) return { error: queryError.message };
-  const salaryByEmployee = new Map((salaries ?? []).map((row) => [row.employee_id, row]));
+  const salaryByEmployee = new Map(
+    (salaries ?? []).map((row) => [row.employee_id, row]),
+  );
   const attendanceByEmployee = new Map();
   for (const row of attendance ?? []) {
     if (!attendanceByEmployee.has(row.employee_id)) attendanceByEmployee.set(row.employee_id, []);
@@ -130,5 +132,10 @@ export async function createDraft(periodMonth) {
     if (error) return { error: error.message };
   }
   revalidatePath("/hr/payroll"); revalidatePath("/admin/payroll");
-  return { ok: true, runId: run.id, count: slips.length };
+  return {
+    ok: true,
+    runId: run.id,
+    count: slips.length,
+    skipped: (employees ?? []).length - slips.length,
+  };
 }

@@ -15,7 +15,13 @@ export function DraftForm() {
       if (result?.error) {
         setMessage(result.error);
       } else {
-        setMessage(`Draft generated for ${result.count} employee(s)`);
+        setMessage(
+          result.count
+            ? `Draft generated for ${result.count} employee(s)${
+                result.skipped ? ` · ${result.skipped} skipped without an eligible salary` : ""
+              }`
+            : "No employees were included. Save a salary with an effective date on or before the selected month end.",
+        );
         router.refresh();
       }
     } catch (error) {
