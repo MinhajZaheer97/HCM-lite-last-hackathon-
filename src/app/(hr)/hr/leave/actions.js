@@ -19,14 +19,30 @@ export async function decideLeave({ requestId, decision, comment }) {
   if (decision === "approved") {
     const { company, holidays } = await getCompanyContext();
     const dates = listWorkingDates(request.start_date, request.end_date, { weekendDays: company?.weekend_days ?? [0, 6], holidays });
-    const records = dates.map((workDate) => ({ employee_id: request.employee_id, work_date: workDate, status: "on_leave", source: "system", notes: `Leave: ${request.leave_types?.name}` }));
+    const records = dates.map((workDate) => ({
+      employee_id: request.employee_id,
+      company_id: profile.company_id,
+      work_date: workDate,
+      status: "on_leave",
+      source: "system",
+      notes: `Leave: ${request.leave_types?.name}`,
+    }));
     if (records.length) {
       const { error: attendanceError } = await supabase.from("attendance_records").upsert(records, { onConflict: "employee_id,work_date", ignoreDuplicates: false });
       if (attendanceError) return { error: attendanceError.message };
     }
   }
   const { data: employeeProfile } = await supabase.from("profiles").select("id").eq("employee_id", request.employee_id).maybeSingle();
-  if (employeeProfile) await getAdmin().from("notifications").insert({ profile_id: employeeProfile.id, type: "leave_decision", title: `Leave request ${decision}`, body: `${request.leave_types?.name ?? "Leave"} request was ${decision}.${cleanComment ? ` ${cleanComment}` : ""}`, link: "/me/leave" });
+  if (employeeProfile) {
+    await getAdmin().from("notifications").insert({
+      profile_id: employeeProfile.id,
+      company_id: profile.company_id,
+      type: "leave_decision",
+      title: `Leave request ${decision}`,
+      body: `${request.leave_types?.name ?? "Leave"} request was ${decision}.${cleanComment ? ` ${cleanComment}` : ""}`,
+      link: "/me/leave",
+    });
+  }
   revalidatePath("/hr/leave"); revalidatePath("/admin/leave"); revalidatePath("/me/leave"); revalidatePath("/me/attendance");
   return { ok: true };
 }

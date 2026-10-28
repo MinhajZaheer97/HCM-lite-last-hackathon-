@@ -110,11 +110,13 @@ export async function createEmployeeLogin(employeeId) {
   const { error: linkError } = await db
     .from("employees")
     .update({ auth_user_id: data.user.id })
-    .eq("id", employee.id);
+    .eq("id", employee.id)
+    .eq("company_id", companyId);
   const { error: profileError } = await db
     .from("profiles")
     .update({ employee_id: employee.id, company_id: companyId })
-    .eq("id", data.user.id);
+    .eq("id", data.user.id)
+    .eq("company_id", companyId);
 
   if (linkError || profileError) {
     // Roll back so a retry starts clean.

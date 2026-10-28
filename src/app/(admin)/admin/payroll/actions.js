@@ -17,6 +17,7 @@ export async function finalizePayroll(runId) {
       await getAdmin().from("notifications").insert(
         profiles.map((item) => ({
           profile_id: item.id,
+          company_id: profile.company_id,
           type: "payslip_available",
           title: "Payslip available",
           body: "Your finalized payslip is ready to download.",
