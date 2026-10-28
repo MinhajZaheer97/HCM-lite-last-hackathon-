@@ -11,6 +11,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function saveSalary({ employeeId, basic, allowances, effectiveFrom }) {
   const { profile } = await requireRole(["hr", "admin"]);
+  const companyId = profile.company_id;
   const amount = Number(basic);
   if (!employeeId || !Number.isFinite(amount) || amount < 0) return { error: "Enter a valid basic salary" };
   if (!DATE_RE.test(effectiveFrom)) return { error: "Effective date is required" };
@@ -24,6 +25,7 @@ export async function saveSalary({ employeeId, basic, allowances, effectiveFrom 
   const supabase = await createClient();
   const { error } = await supabase.from("salary_structures").upsert({
     employee_id: employeeId,
+    company_id: companyId,
     basic: amount,
     allowances: parsedAllowances,
     effective_from: effectiveFrom,
@@ -46,6 +48,7 @@ export async function createDraft(periodMonth) {
   if (!/^\d{4}-\d{2}$/.test(periodMonth)) return { error: "Choose a valid month" };
   const supabase = await createClient();
   const { company, holidays } = await getCompanyContext();
+  const companyId = profile.company_id;
   const periodDate = `${periodMonth}-01`;
   const monthEnd = new Date(Date.UTC(Number(periodMonth.slice(0, 4)), Number(periodMonth.slice(5, 7)), 0))
     .toISOString()
@@ -58,7 +61,7 @@ export async function createDraft(periodMonth) {
   if (existingRun?.status === "finalized") return { error: "This payroll run is finalized" };
   const dates = monthDates(periodMonth, company?.weekend_days ?? [0, 6], holidays);
   const { data: run, error: runError } = await supabase.from("payroll_runs").upsert({
-    period_month: periodDate, status: "draft", drafted_by: profile.id,
+    company_id: companyId, period_month: periodDate, status: "draft", drafted_by: profile.id,
   }, { onConflict: "period_month" }).select("id, status").single();
   if (runError) return { error: runError.message };
   if (run.status === "finalized") return { error: "This payroll run is finalized" };
@@ -117,6 +120,7 @@ export async function createDraft(periodMonth) {
       halfDays,
     });
     slips.push({
+      company_id: companyId,
       run_id: run.id,
       employee_id: employee.id,
       gross: result.gross,

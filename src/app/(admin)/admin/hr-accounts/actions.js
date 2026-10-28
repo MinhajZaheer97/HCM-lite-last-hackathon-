@@ -55,7 +55,8 @@ export async function setHrActive(profileId, isActive) {
     .from("profiles")
     .update({ is_active: isActive })
     .eq("id", profileId)
-    .eq("role", "hr");
+    .eq("role", "hr")
+    .eq("company_id", companyId);
   if (error) return { error: error.message };
   revalidatePath("/admin/hr-accounts");
   return { ok: true };
