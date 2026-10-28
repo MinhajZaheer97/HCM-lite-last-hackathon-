@@ -45,8 +45,9 @@ Run these files in the Supabase SQL Editor in order:
 3. `supabase/migrations/003_triggers.sql`
 4. `supabase/migrations/004_employee_payroll_access.sql`
 5. `supabase/migrations/005_add_company_scope.sql`
+6. `supabase/migrations/006_backfill_default_company.sql`
 
-The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, payroll finalization locks, and the additive company ownership columns. Migration 005 does not backfill ownership or change RLS; those are controlled follow-up phases. `supabase/rls-tests.sql` can be run afterward to verify the main access boundaries.
+The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, payroll finalization locks, additive company ownership columns, and the controlled default-company backfill. Migration 005 does not backfill ownership or change RLS; migration 006 assigns existing rows to company `1` without deleting data. Run `supabase/multi-company-backfill-validation.sql` after migration 006.
 
 ## Netlify deployment
 
