@@ -18,10 +18,11 @@ function randomPassword() {
   return out;
 }
 
-async function nextEmpCode(supabase) {
+async function nextEmpCode(supabase, companyId) {
   const { data } = await supabase
     .from("employees")
     .select("emp_code")
+    .eq("company_id", companyId)
     .order("emp_code", { ascending: false })
     .limit(1);
   const last = data?.[0]?.emp_code;
@@ -50,7 +51,7 @@ export async function saveEmployee(row) {
   const supabase = await createClient();
 
   let empCode = String(row?.emp_code ?? "").trim().toUpperCase();
-  if (!empCode) empCode = await nextEmpCode(supabase);
+  if (!empCode) empCode = await nextEmpCode(supabase, companyId);
 
   const payload = {
     emp_code: empCode,

@@ -23,7 +23,7 @@ RLS on **every** table; append-only audit via triggers:
 - `holidays` (date unique, name)
 - `profiles` (id = auth.users.id, full_name, role `admin|hr|employee`, employee_id, is_active)
 - `departments` (name unique), `designations` (name, department_id nullable)
-- `employees` (emp_code unique, name, email unique, phone, gender, dob, address, dept, designation, join_date required, exit_date, status, created_by)
+- `employees` (emp_code unique per company, name, email unique, phone, gender, dob, address, dept, designation, join_date required, exit_date, status, created_by)
 - `leave_types` (name, annual_days, is_paid)
 - `attendance_records` (unique(employee_id, work_date); check_in/out timestamps; status `present|late|half_day|missing_checkout|on_leave`; worked_minutes; source `web|correction`)
 - `attendance_corrections` (record_id, requested JSONB, reason, status, reviewed_by/comment/at)

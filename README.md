@@ -50,8 +50,9 @@ Run these files in the Supabase SQL Editor in order:
 8. `supabase/migrations/008_multi_company_setup.sql`
 9. `supabase/migrations/009_fix_company_admin_signup.sql`
 10. `supabase/migrations/010_company_isolation_rls.sql`
+11. `supabase/migrations/011_company_employee_code.sql`
 
-The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, payroll finalization locks, additive company ownership columns, and the controlled default-company backfill. Migration 005 does not backfill ownership or change RLS; migration 006 assigns existing rows to company `1` without deleting data. Run `supabase/multi-company-backfill-validation.sql` after migration 006. Migration 009 fixes company-first admin signup for databases where `profiles.company_id` is required. Migration 010 enforces company isolation in RLS and scopes holidays. Company admins create accounts directly from `/setup` with their email and password; no deployment-wide setup access code is required.
+The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, payroll finalization locks, additive company ownership columns, and the controlled default-company backfill. Migration 005 does not backfill ownership or change RLS; migration 006 assigns existing rows to company `1` without deleting data. Run `supabase/multi-company-backfill-validation.sql` after migration 006. Migration 009 fixes company-first admin signup for databases where `profiles.company_id` is required. Migration 010 enforces company isolation in RLS and scopes holidays. Migration 011 makes employee codes unique per company, allowing different companies to reuse codes such as `EMP-0001`. Company admins create accounts directly from `/setup` with their email and password; no deployment-wide setup access code is required.
 
 ## Netlify deployment
 
