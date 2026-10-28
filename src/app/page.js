@@ -11,6 +11,7 @@ export default async function Home() {
   if (!(await isSetupComplete())) redirect("/setup");
   const { user, profile } = await getCurrentProfile();
   if (!user || !profile) redirect("/login");
+  if (!profile.company_id) redirect("/setup");
 
   redirect(roleHome[profile.role] ?? "/login");
 }

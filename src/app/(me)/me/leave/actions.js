@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { getCurrentCompanyId, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getCompanyContext } from "@/lib/attendance/context";
 import { requestedLeaveDays } from "@/lib/leave/rules";
@@ -10,7 +10,9 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function applyLeave({ leaveTypeId, startDate, endDate, isHalfDay, reason }) {
   const { profile } = await requireRole("employee");
+  const companyId = await getCurrentCompanyId();
   if (!profile?.employee_id) return { error: "Your account is not linked to an employee record" };
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
   if (!DATE_RE.test(startDate) || !DATE_RE.test(endDate) || endDate < startDate) {
     return { error: "Enter a valid date range" };
   }
@@ -44,6 +46,7 @@ export async function applyLeave({ leaveTypeId, startDate, endDate, isHalfDay, r
 
   const { error } = await supabase.from("leave_requests").insert({
     employee_id: profile.employee_id,
+    company_id: companyId,
     leave_type_id: type.id,
     start_date: startDate,
     end_date: endDate,

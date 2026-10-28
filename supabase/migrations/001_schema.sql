@@ -6,9 +6,9 @@
 -- Needed for the leave-overlap exclusion constraint.
 create extension if not exists btree_gist;
 
--- ── Company (single row — single tenant) ─────────────────────
+-- ── Company (tenant root; supports multiple companies) ─────
 create table if not exists companies (
-  id int primary key default 1 check (id = 1),
+  id int generated always as identity primary key,
   name text not null,
   address text,
   office_location text,

@@ -1,6 +1,6 @@
 # HCM Lite
 
-HCM Lite is a single-company human capital management app built with Next.js, Supabase, and Tailwind CSS. The deployment baseline includes authentication, first-run company setup, employee management, attendance, leave, payroll, payslip PDFs, dashboards, announcements, notifications, and audit logs.
+HCM Lite is a multi-company-ready human capital management app built with Next.js, Supabase, and Tailwind CSS. The deployment baseline includes authentication, tenant setup, employee management, attendance, leave, payroll, payslip PDFs, dashboards, announcements, notifications, and audit logs.
 
 The AI assistant routes remain visible as placeholders but are intentionally not part of this deployment. OpenRouter variables are optional unless the AI phase is implemented later.
 
@@ -14,7 +14,7 @@ Copy-Item .env.example .env.local
 npm.cmd run dev
 ```
 
-Open `http://localhost:3000`. On a fresh database, `/setup` creates the company and first Admin account.
+Open `http://localhost:3000`. `/setup` creates a new company and its first Admin account for that tenant.
 
 ## Environment variables
 
@@ -25,7 +25,6 @@ Required:
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase browser/SSR key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only privileged operations |
-| `SETUP_ACCESS_CODE` | Secret required by the first-run setup wizard |
 
 Optional and currently unused:
 
@@ -34,7 +33,7 @@ Optional and currently unused:
 | `OPENROUTER_API_KEY` | Reserved for the deferred AI phase |
 | `OPENROUTER_MODEL` | Reserved for the deferred AI phase |
 
-Never expose or commit `SUPABASE_SERVICE_ROLE_KEY`, `SETUP_ACCESS_CODE`, or any API key.
+Never expose or commit `SUPABASE_SERVICE_ROLE_KEY` or any API key.
 
 ## Supabase setup
 
@@ -47,7 +46,11 @@ Run these files in the Supabase SQL Editor in order:
 5. `supabase/migrations/005_add_company_scope.sql`
 6. `supabase/migrations/006_backfill_default_company.sql`
 
-The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, payroll finalization locks, additive company ownership columns, and the controlled default-company backfill. Migration 005 does not backfill ownership or change RLS; migration 006 assigns existing rows to company `1` without deleting data. Run `supabase/multi-company-backfill-validation.sql` after migration 006.
+7. `supabase/migrations/007_single_company_admin_policy.sql`
+8. `supabase/migrations/008_multi_company_setup.sql`
+9. `supabase/migrations/009_fix_company_admin_signup.sql`
+
+The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, payroll finalization locks, additive company ownership columns, and the controlled default-company backfill. Migration 005 does not backfill ownership or change RLS; migration 006 assigns existing rows to company `1` without deleting data. Run `supabase/multi-company-backfill-validation.sql` after migration 006. Migration 009 fixes company-first admin signup for databases where `profiles.company_id` is required. Company admins create accounts directly from `/setup` with their email and password; no deployment-wide setup access code is required.
 
 ## Netlify deployment
 
@@ -56,7 +59,7 @@ The migrations create the schema, RLS policies, audit triggers, attendance/leave
 3. Keep the repository root as the base directory. Netlify reads `netlify.toml` and uses `npm run build`.
 4. Add the required environment variables in **Site configuration → Environment variables** for every deploy context.
 5. Deploy the site.
-6. Open the deployed URL and complete `/setup` using the configured `SETUP_ACCESS_CODE`.
+6. Open the deployed URL and complete `/setup` with the company admin's email and password.
 7. Apply the Supabase migrations before using the application.
 
 Netlify must have access to the public Supabase variables at build/runtime and the service-role key only in server-side environment variables. Do not put secrets in `NEXT_PUBLIC_*` variables.

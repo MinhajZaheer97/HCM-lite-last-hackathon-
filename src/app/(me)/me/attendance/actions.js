@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { getCurrentCompanyId, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getCompanyContext } from "@/lib/attendance/context";
 import { zonedParts } from "@/lib/dates/tz";
@@ -14,7 +14,9 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 // by the unique(employee_id, work_date) constraint.
 export async function punchClock() {
   const { profile } = await requireRole("employee");
+  const companyId = await getCurrentCompanyId();
   if (!profile?.employee_id) return { error: "Your account is not linked to an employee record" };
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
 
   const supabase = await createClient();
   const { company, holidays } = await getCompanyContext();
@@ -62,6 +64,7 @@ export async function punchClock() {
     });
     const { error } = await supabase.from("attendance_records").insert({
       employee_id: profile.employee_id,
+      company_id: companyId,
       work_date: today,
       check_in: now.toISOString(),
       status,
@@ -109,7 +112,9 @@ export async function punchClock() {
 
 export async function requestCorrection({ recordId, checkIn, checkOut, reason }) {
   const { profile } = await requireRole("employee");
+  const companyId = await getCurrentCompanyId();
   if (!profile?.employee_id) return { error: "Your account is not linked to an employee record" };
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
 
   const why = String(reason ?? "").trim();
   if (!why) return { error: "A reason is required" };
@@ -133,6 +138,7 @@ export async function requestCorrection({ recordId, checkIn, checkOut, reason })
   const { error } = await supabase.from("attendance_corrections").insert({
     attendance_record_id: record.id,
     employee_id: profile.employee_id,
+    company_id: companyId,
     requested: { check_in: checkIn || null, check_out: checkOut || null },
     reason: why,
   });

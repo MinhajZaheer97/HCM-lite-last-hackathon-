@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Field, Input, Select } from "@/components/ui";
-import { completeSetup, verifyAccessCode } from "./actions";
+import { completeSetup } from "./actions";
 
 const WEEKDAYS = [
   { value: 0, label: "Sunday" },
@@ -19,7 +19,6 @@ export default function SetupWizard() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const [accessCode, setAccessCode] = useState("");
   const [company, setCompany] = useState({
     name: "",
     address: "",
@@ -49,7 +48,7 @@ export default function SetupWizard() {
   async function submit() {
     setBusy(true);
     setError("");
-    const result = await completeSetup({ accessCode, company, admin });
+    const result = await completeSetup({ company, admin });
     setBusy(false);
     if (result?.error) setError(result.error);
   }
@@ -57,7 +56,7 @@ export default function SetupWizard() {
   return (
     <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
       <ol className="mb-6 flex gap-2 text-xs">
-        {["Access", "Company", "Admin account"].map((label, i) => (
+        {["Company", "Admin account"].map((label, i) => (
           <li
             key={label}
             className={`flex-1 rounded-full px-3 py-1 text-center ${
@@ -80,36 +79,6 @@ export default function SetupWizard() {
       )}
 
       {step === 1 && (
-        <div className="space-y-4">
-          <Field
-            label="Setup access code"
-            hint="The SETUP_ACCESS_CODE secret from your server environment. Setup only works while no company exists."
-          >
-            <Input
-              type="password"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-              placeholder="Access code"
-              autoFocus
-            />
-          </Field>
-          <Button
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true);
-              setError("");
-              const result = await verifyAccessCode(accessCode);
-              setBusy(false);
-              if (result?.error) setError(result.error);
-              else setStep(2);
-            }}
-          >
-            {busy ? "Checking…" : "Continue"}
-          </Button>
-        </div>
-      )}
-
-      {step === 2 && (
         <div className="space-y-4">
           <Field label="Company name">
             <Input value={company.name} onChange={(e) => setCompanyField("name", e.target.value)} />
@@ -189,12 +158,9 @@ export default function SetupWizard() {
             </div>
           </Field>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setStep(1)}>
-              Back
-            </Button>
             <Button
               disabled={busy || company.weekend_days.length === 0}
-              onClick={() => setStep(3)}
+              onClick={() => setStep(2)}
             >
               Continue
             </Button>
@@ -202,7 +168,7 @@ export default function SetupWizard() {
         </div>
       )}
 
-      {step === 3 && (
+      {step === 2 && (
         <div className="space-y-4">
           <Field label="Admin full name">
             <Input value={admin.full_name} onChange={(e) => setAdminField("full_name", e.target.value)} />
@@ -222,7 +188,7 @@ export default function SetupWizard() {
             />
           </Field>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setStep(2)}>
+            <Button variant="secondary" onClick={() => setStep(1)}>
               Back
             </Button>
             <Button disabled={busy} onClick={submit}>

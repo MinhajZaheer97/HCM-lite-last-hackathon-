@@ -17,20 +17,31 @@ export async function getCurrentProfile() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, role, employee_id, is_active")
+    .select("id, full_name, role, employee_id, is_active, company_id")
     .eq("id", user.id)
     .single();
 
   return { user, profile: profile ?? null };
 }
 
+export async function getCurrentCompanyId() {
+  const { profile } = await getCurrentProfile();
+  return profile?.company_id ?? null;
+}
+
 // Authoritative server-side role guard for layouts and pages.
+export function getCompanyDashboardPath(profile) {
+  if (!profile?.role) return "/login";
+  return roleHome[profile.role] ?? "/login";
+}
+
 export async function requireRole(roles) {
   const allowed = Array.isArray(roles) ? roles : [roles];
   const { user, profile } = await getCurrentProfile();
 
   if (!user || !profile || !profile.is_active) redirect("/login");
-  if (!allowed.includes(profile.role)) redirect(roleHome[profile.role] ?? "/login");
+  if (!profile.company_id) redirect("/setup");
+  if (!allowed.includes(profile.role)) redirect(getCompanyDashboardPath(profile));
 
   return { user, profile };
 }

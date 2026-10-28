@@ -1,17 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { getCurrentCompanyId, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveDesignation(row) {
   await requireRole("admin");
+  const companyId = await getCurrentCompanyId();
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
+
   const name = String(row?.name ?? "").trim();
   if (!name) return { error: "Designation name is required" };
 
   const payload = {
     name,
     department_id: row.department_id ? Number(row.department_id) : null,
+    company_id: companyId,
   };
 
   const supabase = await createClient();

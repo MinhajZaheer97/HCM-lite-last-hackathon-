@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { getCurrentCompanyId, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveSettings(values) {
   await requireRole("admin");
+  const companyId = await getCurrentCompanyId();
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
 
   const name = String(values?.name ?? "").trim();
   if (!name) return { error: "Company name is required" };
@@ -37,7 +39,7 @@ export async function saveSettings(values) {
       grace_minutes: grace,
       weekend_days: weekend,
     })
-    .eq("id", 1);
+    .eq("id", companyId);
 
   if (error) return { error: error.message };
   revalidatePath("/admin/settings");

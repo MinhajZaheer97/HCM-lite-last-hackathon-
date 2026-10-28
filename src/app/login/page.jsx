@@ -1,13 +1,18 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { isSetupComplete } from "@/lib/auth";
+import { getCurrentProfile, isSetupComplete } from "@/lib/auth";
 import LoginForm from "./login-form";
 
 export const metadata = { title: "Log in — HCM Lite" };
 
 export default async function LoginPage() {
-  await connection(); // setup check queries the database per request
+  await connection();
   if (!(await isSetupComplete())) redirect("/setup");
+
+  const { user, profile } = await getCurrentProfile();
+  if (user && profile?.company_id) {
+    redirect(profile.role === "admin" ? "/admin/dashboard" : profile.role === "hr" ? "/hr/dashboard" : "/me/dashboard");
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">

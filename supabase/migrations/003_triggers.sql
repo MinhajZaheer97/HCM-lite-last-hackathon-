@@ -8,11 +8,12 @@
 create or replace function handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, role, company_id)
   values (
     new.id,
     coalesce(new.raw_user_meta_data ->> 'full_name', new.email),
-    coalesce(new.raw_user_meta_data ->> 'role', 'employee')
+    coalesce(new.raw_user_meta_data ->> 'role', 'employee'),
+    nullif(new.raw_user_meta_data ->> 'company_id', '')::int
   );
   return new;
 end $$;
@@ -49,11 +50,16 @@ declare
   v_action text := lower(tg_op);
   v_row jsonb;
   v_entity_id text;
+  v_company_id int;
 begin
   v_row := case when tg_op = 'DELETE' then to_jsonb(old) else to_jsonb(new) end;
   v_entity_id := coalesce(v_row ->> 'id', v_row ->> 'emp_code', tg_table_name);
+  v_company_id := case
+    when tg_table_name = 'companies' then (v_row ->> 'id')::int
+    else nullif(v_row ->> 'company_id', '')::int
+  end;
 
-  insert into audit_logs (actor_id, actor_label, action, entity, entity_id, details)
+  insert into audit_logs (actor_id, actor_label, action, entity, entity_id, details, company_id)
   values (
     auth.uid(),
     coalesce(
@@ -63,7 +69,8 @@ begin
     v_action,
     tg_table_name,
     v_entity_id,
-    v_row
+    v_row,
+    v_company_id
   );
   return coalesce(new, old);
 end $$;

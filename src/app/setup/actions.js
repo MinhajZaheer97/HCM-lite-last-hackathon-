@@ -19,38 +19,13 @@ function validateSetup({ company, admin }) {
   return null;
 }
 
-export async function verifyAccessCode(code) {
-  const expected = process.env.SETUP_ACCESS_CODE;
-  if (!expected) return fail("SETUP_ACCESS_CODE is not configured on the server");
-  if (!code || code !== expected) return fail("Invalid access code");
-
-  const { getAdmin: getDb } = await import("@/lib/supabase/admin");
-  const { data } = await getDb().from("companies").select("id").limit(1);
-  if (data?.length) return fail("Setup is already completed for this company");
-  return { ok: true };
-}
-
-export async function completeSetup({ accessCode, company, admin }) {
-  const expected = process.env.SETUP_ACCESS_CODE;
-  if (!expected || !accessCode || accessCode !== expected) return fail("Invalid access code");
+export async function completeSetup({ company, admin }) {
   const validationError = validateSetup({ company, admin });
   if (validationError) return fail(validationError);
 
   const db = getAdmin();
 
-  // Re-check emptiness under concurrency; also acts as the setup lock.
-  const { data: existing } = await db.from("companies").select("id").limit(1);
-  if (existing?.length) return fail("Setup is already completed for this company");
-
-  const { data: created, error: createError } = await db.auth.admin.createUser({
-    email: admin.email.trim(),
-    password: admin.password,
-    email_confirm: true,
-    user_metadata: { full_name: admin.full_name.trim(), role: "admin" },
-  });
-  if (createError) return fail(createError.message);
-
-  const { error: companyError } = await db.from("companies").insert({
+  const { data: companyRow, error: companyError } = await db.from("companies").insert({
     name: company.name.trim(),
     address: company.address?.trim() || null,
     office_location: company.office_location?.trim() || null,
@@ -61,12 +36,23 @@ export async function completeSetup({ accessCode, company, admin }) {
     grace_minutes: Number(company.grace_minutes),
     weekend_days: company.weekend_days,
     setup_completed_at: new Date().toISOString(),
-  });
+  }).select("id").single();
 
-  if (companyError) {
-    // Roll back the admin user so a retry starts clean.
-    await db.auth.admin.deleteUser(created.user.id);
-    return fail(companyError.message);
+  if (companyError) return fail(companyError.message);
+
+  const { data: created, error: createError } = await db.auth.admin.createUser({
+    email: admin.email.trim(),
+    password: admin.password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: admin.full_name.trim(),
+      role: "admin",
+      company_id: String(companyRow.id),
+    },
+  });
+  if (createError) {
+    await db.from("companies").delete().eq("id", companyRow.id);
+    return fail(createError.message);
   }
 
   // Sign the new admin in (sets session cookies). Profile and audit rows are

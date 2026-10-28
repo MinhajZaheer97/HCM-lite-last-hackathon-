@@ -1,3 +1,4 @@
+import { getCurrentCompanyId } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import PageHeader from "@/components/ui/PageHeader";
 import SettingsForm from "./settings-form";
@@ -6,7 +7,10 @@ export const metadata = { title: "Company Settings — HCM Lite" };
 
 export default async function SettingsPage() {
   const supabase = await createClient();
-  const { data: company } = await supabase.from("companies").select("*").eq("id", 1).single();
+  const companyId = await getCurrentCompanyId();
+  const { data: company } = companyId === null
+    ? { data: null }
+    : await supabase.from("companies").select("*").eq("id", companyId).maybeSingle();
 
   return (
     <>

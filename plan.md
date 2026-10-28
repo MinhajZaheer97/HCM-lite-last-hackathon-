@@ -2,7 +2,7 @@
 
 ## Confirmed decisions
 - **AI**: OpenRouter (user supplies `OPENROUTER_API_KEY`; model set via `OPENROUTER_MODEL`, must support tool calling). Plain `fetch` to the OpenAI-compatible endpoint — no SDK.
-- **Bootstrap**: `/setup` works only while no company exists AND requires `SETUP_ACCESS_CODE` from server env.
+- **Bootstrap**: `/setup` allows a new company admin to create a company with their email and password.
 - **Payroll**: per-day salary = gross ÷ working days in that month (company calendar); deduct 1.0 day per absent/unpaid-leave day, 0.5 per half-day; itemized deductions on payslip; **no tax** (none specified — not invented).
 - **Charts**: recharts. **Styling**: Tailwind v4 (already configured in scaffold — extend `@theme` tokens in `globals.css`).
 - Assumptions documented in-app: single company (single-tenant); company timezone default `Asia/Karachi` + currency default `PKR` (both settings); employment statuses `probation | active | exited` (headcount = active + probation); leave quotas per calendar year, no mid-year proration; partial leave approvals NOT supported (reject & resubmit); 40 h/week shown as fixed reference next to company schedule.
@@ -19,7 +19,7 @@
 
 ## Database (Supabase Postgres) — `supabase/migrations/*.sql`
 RLS on **every** table; append-only audit via triggers:
-- `companies` (single row: name, address, timezone, currency, office_start/end, grace_minutes, weekend_days[], setup_completed_at)
+- `companies` (tenant rows: name, address, timezone, currency, office_start/end, grace_minutes, weekend_days[], setup_completed_at)
 - `holidays` (date unique, name)
 - `profiles` (id = auth.users.id, full_name, role `admin|hr|employee`, employee_id, is_active)
 - `departments` (name unique), `designations` (name, department_id nullable)
@@ -49,7 +49,7 @@ RLS on **every** table; append-only audit via triggers:
 ## Phases (implement → verify acceptance → update HCM_LITE_PLAN.md)
 0. **Foundation**: clean `npm install` (repair node_modules, generate lockfile), add deps, `.env.example`, Tailwind theme + UI kit, app shell + placeholder pages, root redirect (setup/login/dashboard), create `HCM_LITE_PLAN.md`. *Accept: dev server clean, lint passes.*
 1. **Database**: migrations (schema → RLS → triggers), Supabase clients (browser/server/admin). *Accept: SQL applies cleanly; `rls-tests.sql` all pass.*
-2. **Auth & setup**: `/setup` wizard (access code + company + policies + first admin), login/logout/change-password, session middleware, role guards. *Accept: fresh DB → setup → admin login; wrong-role/direct-URL blocked.*
+2. **Auth & setup**: `/setup` wizard (company + first admin), login/logout/change-password, session middleware, role guards. *Accept: setup → admin login; wrong-role/direct-URL blocked.*
 3. **Org config (Admin)**: departments, designations, leave types, holidays CRUD; company settings; HR account create/deactivate/reset. *Accept: CRUD round-trips; HR blocked at server + RLS.*
 4. **Employees (HR)**: register/edit, directory with search/filters, 360° view, employee login creation (service-role, temp password shown once), CSV import dry-run + error report + confirmed commit, CSV export. *Accept: invalid rows rejected pre-commit, no partial writes; employee sees own record only.*
 5. **Attendance**: check-in/out (company timezone, grace/late, weekend/holiday guard, duplicate prevention), statuses incl. missing-checkout/half-day, my calendar/history, HR daily board, correction request → HR approval. *Accept: statuses match config; weekend blocked; duplicates rejected; corrections audited.*
@@ -64,7 +64,6 @@ RLS on **every** table; append-only audit via triggers:
 1. Create Supabase project → paste Project URL + anon key + service-role key into `.env.local`.
 2. Run migrations (paste SQL into Supabase SQL Editor, or install Supabase CLI and I run them).
 3. Provide OpenRouter API key + choose a tool-calling model.
-4. Choose a `SETUP_ACCESS_CODE` value.
 
 ## Testing strategy
 Unit (`node:test`): payroll calc, attendance rules, working days, leave balance, CSV validation. Per-phase manual/scripted acceptance checks. `supabase/rls-tests.sql` after Phase 1 and again in Phase 11. Final: full spec §12 demo walkthrough on a fresh project. `HCM_LITE_PLAN.md` status updates only after acceptance checks actually pass.

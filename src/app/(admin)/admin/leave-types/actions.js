@@ -1,11 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { getCurrentCompanyId, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveLeaveType(row) {
   await requireRole("admin");
+  const companyId = await getCurrentCompanyId();
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
+
   const name = String(row?.name ?? "").trim();
   if (!name) return { error: "Leave type name is required" };
 
@@ -13,7 +16,7 @@ export async function saveLeaveType(row) {
   if (!Number.isFinite(annual) || annual <= 0 || annual > 365)
     return { error: "Annual days must be between 0.5 and 365" };
 
-  const payload = { name, annual_days: annual, is_paid: Boolean(row.is_paid) };
+  const payload = { name, annual_days: annual, is_paid: Boolean(row.is_paid), company_id: companyId };
   const supabase = await createClient();
   const { error } = row.id
     ? await supabase.from("leave_types").update(payload).eq("id", row.id)

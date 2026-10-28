@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { getCurrentCompanyId, requireRole } from "@/lib/auth";
 import { getAdmin } from "@/lib/supabase/admin";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -15,6 +15,8 @@ function randomPassword() {
 
 export async function createHrAccount({ full_name, email, password }) {
   await requireRole("admin");
+  const companyId = await getCurrentCompanyId();
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
 
   const name = String(full_name ?? "").trim();
   const mail = String(email ?? "").trim().toLowerCase();
@@ -29,7 +31,7 @@ export async function createHrAccount({ full_name, email, password }) {
     email: mail,
     password: tempPassword,
     email_confirm: true,
-    user_metadata: { full_name: name, role: "hr" },
+    user_metadata: { full_name: name, role: "hr", company_id: companyId },
   });
   if (error) return { error: error.message };
 
@@ -38,6 +40,7 @@ export async function createHrAccount({ full_name, email, password }) {
     id: data.user.id,
     full_name: name,
     role: "hr",
+    company_id: companyId,
     is_active: true,
   });
 

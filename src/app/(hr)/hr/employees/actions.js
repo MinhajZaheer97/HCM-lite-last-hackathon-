@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { getCurrentCompanyId, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getAdmin } from "@/lib/supabase/admin";
 import { parseCsv, validateRows, CSV_COLUMNS } from "@/lib/csv";
@@ -31,6 +31,9 @@ async function nextEmpCode(supabase) {
 
 export async function saveEmployee(row) {
   await requireRole(["hr", "admin"]);
+  const companyId = await getCurrentCompanyId();
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
+
   const name = String(row?.full_name ?? "").trim();
   const email = String(row?.email ?? "").trim().toLowerCase();
   if (!name) return { error: "Full name is required" };
@@ -53,6 +56,7 @@ export async function saveEmployee(row) {
     emp_code: empCode,
     full_name: name,
     email,
+    company_id: companyId,
     phone: String(row?.phone ?? "").trim() || null,
     gender: row?.gender || null,
     dob: row?.dob || null,
@@ -76,6 +80,8 @@ export async function saveEmployee(row) {
 
 export async function createEmployeeLogin(employeeId) {
   await requireRole(["hr", "admin"]);
+  const companyId = await getCurrentCompanyId();
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
 
   const supabase = await createClient();
   const { data: employee } = await supabase
@@ -94,7 +100,7 @@ export async function createEmployeeLogin(employeeId) {
     email: employee.email,
     password: tempPassword,
     email_confirm: true,
-    user_metadata: { full_name: employee.full_name, role: "employee" },
+    user_metadata: { full_name: employee.full_name, role: "employee", company_id: companyId },
   });
   if (error) return { error: error.message };
 
@@ -106,7 +112,7 @@ export async function createEmployeeLogin(employeeId) {
     .eq("id", employee.id);
   const { error: profileError } = await db
     .from("profiles")
-    .update({ employee_id: employee.id })
+    .update({ employee_id: employee.id, company_id: companyId })
     .eq("id", data.user.id);
 
   if (linkError || profileError) {
@@ -175,10 +181,14 @@ export async function importCsvCommit(validRows) {
   ]);
 
   // Re-resolve names → ids server-side; the client never dictates ids.
+  const companyId = await getCurrentCompanyId();
+  if (companyId === null) return { error: "Your account is not assigned to a company" };
+
   const rows = validRows.map((r) => ({
     emp_code: String(r.emp_code ?? "").trim().toUpperCase(),
     full_name: String(r.full_name ?? "").trim(),
     email: String(r.email ?? "").trim().toLowerCase(),
+    company_id: companyId,
     phone: String(r.phone ?? "").trim() || null,
     gender: r.gender || null,
     dob: r.dob || null,
