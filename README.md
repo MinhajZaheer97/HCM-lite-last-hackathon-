@@ -1,83 +1,171 @@
 # HCM Lite
 
-HCM Lite is a multi-company-ready human capital management app built with Next.js, Supabase, and Tailwind CSS. The deployment baseline includes authentication, tenant setup, employee management, attendance, leave, payroll, payslip PDFs, dashboards, announcements, notifications, and audit logs.
+HCM Lite is a multi-company human capital management platform built with **Next.js**, **Supabase**, and **Tailwind CSS**. Each company has its own administrator, employees, settings, attendance, leave, payroll, announcements, notifications, and audit history.
 
-The AI assistant routes remain visible as placeholders but are intentionally not part of this deployment. OpenRouter variables are optional unless the AI phase is implemented later.
+## Features
+
+- Multi-company tenant isolation with Supabase RLS
+- Company admin onboarding without a deployment-wide access code
+- Admin, HR, and employee roles
+- Employee directory and login creation
+- Attendance check-in, checkout, corrections, holidays, and company schedules
+- Leave requests, approvals, balances, and attendance linkage
+- Salary structures, payroll drafts, finalization, and payslip PDFs
+- Announcements, notifications, and audit logs
+- CSV employee import/export
+- Company-scoped departments, designations, leave types, holidays, and payroll
+
+The AI routes are placeholders. OpenRouter configuration is reserved for a future phase.
+
+## Requirements
+
+- Node.js 20.9 or newer
+- A Supabase project
+- PowerShell on Windows, or an equivalent shell on macOS/Linux
 
 ## Local development
 
-Requirements: Node.js 20.9 or newer and a Supabase project.
+Install dependencies and create the local environment file:
 
 ```powershell
 npm.cmd install
 Copy-Item .env.example .env.local
+```
+
+Add your Supabase credentials to `.env.local`, then start the app:
+
+```powershell
 npm.cmd run dev
 ```
 
-Open `http://localhost:3000`. `/setup` creates a new company and its first Admin account for that tenant.
+Open [http://localhost:3000](http://localhost:3000). New company administrators create their company and account at `/setup` using their email and password.
+
+On Windows, use `npm.cmd` if PowerShell blocks the `npm` script.
 
 ## Environment variables
 
 Required:
 
-| Variable | Purpose |
+| Variable | Description |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase browser/SSR key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-only privileged operations |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public browser/SSR key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only privileged key |
 
-Optional and currently unused:
+Optional:
 
-| Variable | Purpose |
+| Variable | Description |
 |---|---|
-| `OPENROUTER_API_KEY` | Reserved for the deferred AI phase |
-| `OPENROUTER_MODEL` | Reserved for the deferred AI phase |
+| `OPENROUTER_API_KEY` | Reserved for the future AI assistant |
+| `OPENROUTER_MODEL` | Reserved AI model name |
 
-Never expose or commit `SUPABASE_SERVICE_ROLE_KEY` or any API key.
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is intentionally public and may be exposed in the browser bundle. In Netlify, mark it as **Plain text**, not Secret. Keep `SUPABASE_SERVICE_ROLE_KEY` private and server-only. Never commit `.env.local` or share credentials.
 
-## Supabase setup
+## Database setup
 
-Run these files in the Supabase SQL Editor in order:
+Run the migrations in the Supabase SQL Editor in this order:
 
-1. `supabase/migrations/001_schema.sql`
-2. `supabase/migrations/002_rls.sql`
-3. `supabase/migrations/003_triggers.sql`
-4. `supabase/migrations/004_employee_payroll_access.sql`
-5. `supabase/migrations/005_add_company_scope.sql`
-6. `supabase/migrations/006_backfill_default_company.sql`
+1. `001_schema.sql`
+2. `002_rls.sql`
+3. `003_triggers.sql`
+4. `004_employee_payroll_access.sql`
+5. `005_add_company_scope.sql`
+6. `006_backfill_default_company.sql`
+7. `007_single_company_admin_policy.sql`
+8. `008_multi_company_setup.sql`
+9. `009_fix_company_admin_signup.sql`
+10. `010_company_isolation_rls.sql`
+11. `011_company_employee_code.sql`
+12. `012_company_scoped_unique_constraints.sql`
+13. `013_employee_payroll_visibility.sql`
+14. `014_employee_checkout_rls.sql`
 
-7. `supabase/migrations/007_single_company_admin_policy.sql`
-8. `supabase/migrations/008_multi_company_setup.sql`
-9. `supabase/migrations/009_fix_company_admin_signup.sql`
-10. `supabase/migrations/010_company_isolation_rls.sql`
-11. `supabase/migrations/011_company_employee_code.sql`
-12. `supabase/migrations/012_company_scoped_unique_constraints.sql`
-13. `supabase/migrations/013_employee_payroll_visibility.sql`
-14. `supabase/migrations/014_employee_checkout_rls.sql`
+For an existing database, do not skip migrations. The later migrations repair and harden the original single-company schema:
 
-The migrations create the schema, RLS policies, audit triggers, attendance/leave constraints, payroll finalization locks, additive company ownership columns, and the controlled default-company backfill. Migration 005 does not backfill ownership or change RLS; migration 006 assigns existing rows to company `1` without deleting data. Run `supabase/multi-company-backfill-validation.sql` after migration 006. Migration 009 fixes company-first admin signup for databases where `profiles.company_id` is required. Migration 010 enforces company isolation in RLS and scopes holidays. Migration 011 makes employee codes unique per company, allowing different companies to reuse codes such as `EMP-0001`. Migration 012 scopes department, designation, leave-type, and payroll-period uniqueness per company. Migration 013 restores employee access to the payroll run linked to their own payslip. Migration 014 allows employees to check out their own attendance record. Company admins create accounts directly from `/setup` with their email and password; no deployment-wide setup access code is required.
+- `009` fixes company-first admin signup.
+- `010` enforces company data isolation and scopes holidays.
+- `011` makes employee codes unique per company.
+- `012` scopes organization and payroll uniqueness per company.
+- `013` lets employees view their finalized payroll run.
+- `014` lets employees check out their own attendance record.
+
+After migration `006`, run:
+
+```text
+supabase/multi-company-backfill-validation.sql
+```
+
+After migration `010`, use this validation script while signed in as admins from different companies:
+
+```text
+supabase/multi-company-isolation-validation.sql
+```
+
+Each admin should see only their own company and company-owned records.
+
+## Company and role model
+
+| Role | Scope |
+|---|---|
+| Admin | Full access to their own company |
+| HR | Employee, attendance, leave, and payroll operations within their company |
+| Employee | Their own profile, attendance, leave, notifications, and finalized payslips |
+
+Company boundaries are enforced in both application code and PostgreSQL RLS. A user from Company A must not be able to read or modify Company B records by changing a URL, ID, or request payload.
+
+## Payroll flow
+
+1. HR or Admin creates salary structures.
+2. HR or Admin generates a monthly draft.
+3. The draft calculates working days, attendance, approved leave, unpaid leave, deductions, and net pay.
+4. Admin reviews and finalizes the draft.
+5. Finalized payslips become immediately visible to employees.
+6. Employees can download their finalized payslip PDF.
+
+Payroll is company-scoped, and finalized payroll records are locked.
 
 ## Netlify deployment
 
-1. Push this repository to GitHub.
-2. In Netlify, choose **Add new project → Import an existing project** and select the repository.
-3. Keep the repository root as the base directory. Netlify reads `netlify.toml` and uses `npm run build`.
-4. Add the required environment variables in **Site configuration → Environment variables** for every deploy context.
-5. Deploy the site.
-6. Open the deployed URL and complete `/setup` with the company admin's email and password.
-7. Apply the Supabase migrations before using the application.
+1. Push the repository to GitHub.
+2. Import the repository into Netlify.
+3. Keep the repository root as the base directory.
+4. Add the required environment variables in Netlify.
+5. Mark `NEXT_PUBLIC_SUPABASE_ANON_KEY` as **Plain text**.
+6. Keep `SUPABASE_SERVICE_ROLE_KEY` as a private Secret.
+7. Deploy the site.
+8. Run all Supabase migrations before testing the application.
+9. Open the deployed `/setup` route to create the first company.
 
-Netlify must have access to the public Supabase variables at build/runtime and the service-role key only in server-side environment variables. Do not put secrets in `NEXT_PUBLIC_*` variables.
+The repository uses `netlify.toml` and builds with:
 
-## Validation
+```text
+npm run build
+```
+
+## Validation commands
 
 ```powershell
 npm.cmd run lint
-$tests = Get-ChildItem -Path src -Recurse -Filter *.test.js | ForEach-Object { $_.FullName }
-node.exe --test $tests
+node --test "src/**/*.test.js"
 npm.cmd run build
 ```
 
-## Current scope
+The test suite covers attendance rules, payroll calculations, leave rules, analytics, and CSV processing.
 
-The non-AI application is the deployment target. The remaining manual acceptance work is to verify the Phase 4–9 flows against the real Supabase project, especially role isolation, payroll locking, PDF access, notifications, and audit visibility.
+## Project structure
+
+```text
+src/app/                 Next.js routes, pages, and server actions
+src/components/          Reusable UI components
+src/lib/                 Auth, Supabase, attendance, leave, payroll, and utilities
+supabase/migrations/     Database schema, RLS, triggers, and tenant migrations
+supabase/*.sql           Validation and RLS test scripts
+```
+
+## Security notes
+
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` to the browser.
+- Never commit `.env.local`.
+- Run every migration in order.
+- Test two separate companies before production use.
+- Rotate any Supabase key that has been accidentally shared.
