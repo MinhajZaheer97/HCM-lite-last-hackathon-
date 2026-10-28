@@ -4,6 +4,50 @@
 
 begin;
 
+-- The existing finalization guards protect every update to finalized payroll
+-- rows. Permit only this explicit ownership-only backfill, while keeping all
+-- normal finalized payroll and payslip edits locked.
+create or replace function guard_payroll_run() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op in ('UPDATE', 'DELETE') and old.status = 'finalized'
+     and not (
+       tg_op = 'UPDATE'
+       and old.company_id is null
+       and new.company_id is not null
+       and current_setting('hcm.allow_company_backfill', true) = 'on'
+     ) then
+    raise exception 'Payroll run % is finalized and locked', old.period_month;
+  end if;
+  if tg_op = 'UPDATE'
+     and new.status = 'finalized'
+     and old.status <> 'finalized'
+     and not coalesce((select true from profiles where id = auth.uid() and role = 'admin' and is_active), false)
+     and current_setting('hcm.allow_company_backfill', true) <> 'on' then
+    raise exception 'Only an Admin can finalize a payroll run';
+  end if;
+  return coalesce(new, old);
+end $$;
+
+create or replace function guard_payslip() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  v_run uuid := coalesce(old.run_id, new.run_id);
+  v_finalized boolean;
+begin
+  select status = 'finalized' into v_finalized from payroll_runs where id = v_run;
+  if coalesce(v_finalized, false)
+     and not (
+       tg_op = 'UPDATE'
+       and old.company_id is null
+       and new.company_id is not null
+       and current_setting('hcm.allow_company_backfill', true) = 'on'
+     ) then
+    raise exception 'Payslip belongs to a finalized payroll run and is locked';
+  end if;
+  return coalesce(new, old);
+end $$;
+
 do $$
 declare
   company_count integer;
@@ -13,6 +57,8 @@ begin
     raise exception 'Expected exactly one existing company before backfill; found %', company_count;
   end if;
 end $$;
+
+select set_config('hcm.allow_company_backfill', 'on', true);
 
 -- Reference and identity data.
 update profiles set company_id = 1 where company_id is null;
