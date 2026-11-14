@@ -108,8 +108,17 @@ Depends on: Phase 8 · Acceptance: permission matrix holds; audit append-only. S
 - [ ] 9.5 👤 Post announcement as HR → read as employee; check bell after leave decision
 
 ## Phase 10 — AI Assistant 🤖
-Depends on: Phase 8 · Acceptance: answers trace to real records w/ provenance; role isolation tested; honest "insufficient data"; no silent approvals; keys never client-side. Status: ⏭️ deferred — intentionally excluded from the deployment baseline due to time constraints; AI routes remain placeholders.
-- [ ] 10.1–10.10 AI implementation and acceptance (deferred)
+Depends on: Phase 8 · Acceptance: answers trace to real records w/ provenance; role isolation tested; honest "insufficient data"; no silent approvals; keys never client-side. Status: ✅ complete.
+- [x] 10.1 🤖 Server-only Gemini client, configuration, limits, and error handling
+- [x] 10.2 🤖 Role-scoped read-only company, workforce, attendance, leave, payroll, and policy tools
+- [x] 10.3 🤖 Shared analytics-backed summaries and source labels
+- [x] 10.4 🤖 Authenticated `/api/ai/chat` route with tool calling and mutation refusal
+- [x] 10.5 🤖 Shared temporary-history chat UI for Admin, HR, and Employee
+- [x] 10.6 🤖 Input limits, rate limiting, sensitive-field minimization, and provider timeout handling
+- [x] 10.7 🤖 Focused AI configuration tests; lint and production build
+- [x] 10.8 👤 Add `GEMINI_API_KEY` and `GEMINI_MODEL` locally/deployment
+- [x] 10.9 👤 Test Admin, HR, Employee, two-company isolation, direct API, and prompt injection
+- [x] 10.10 👤 Review answers and report business/data issues
 
 ## Phase 11 — Security Review, Polish & Demo Readiness 🎯
 Depends on: Phases 0–9 · Acceptance: non-AI demo script passes on fresh project. Status: 🟨 deployment preparation in progress
@@ -126,8 +135,8 @@ Depends on: Phases 0–9 · Acceptance: non-AI demo script passes on fresh proje
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | Supabase anon key | Phase 1 |
 | SUPABASE_SERVICE_ROLE_KEY | Service-role key (server-only) | Phase 1 |
 | SETUP_ACCESS_CODE | First-run gate secret | Phase 2 |
-| OPENROUTER_API_KEY | AI key (server-only) | Phase 10 |
-| OPENROUTER_MODEL | Tool-calling model ID | Phase 10 |
+| GEMINI_API_KEY | Google Gemini key (server-only) | Phase 10 |
+| GEMINI_MODEL | Gemini model with function calling | Phase 10 |
 
 ---
 

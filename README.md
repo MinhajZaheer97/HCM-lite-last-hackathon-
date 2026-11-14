@@ -15,7 +15,7 @@ HCM Lite is a multi-company human capital management platform built with **Next.
 - CSV employee import/export
 - Company-scoped departments, designations, leave types, holidays, and payroll
 
-The AI routes are placeholders. OpenRouter configuration is reserved for a future phase.
+The AI assistant is a server-only, read-only Google Gemini integration. It uses role-scoped tools: Admins receive company summaries, HR receives operational summaries, and Employees receive only their own records and public policies. Conversations are temporary and are not stored.
 
 ## Requirements
 
@@ -56,8 +56,8 @@ Optional:
 
 | Variable | Description |
 |---|---|
-| `OPENROUTER_API_KEY` | Reserved for the future AI assistant |
-| `OPENROUTER_MODEL` | Reserved AI model name |
+| `GEMINI_API_KEY` | Server-only Google Gemini API key |
+| `GEMINI_MODEL` | Gemini model supporting function calling, for example `gemini-3.1-flash-lite` |
 
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` is intentionally public and may be exposed in the browser bundle. In Netlify, mark it as **Plain text**, not Secret. Keep `SUPABASE_SERVICE_ROLE_KEY` private and server-only. Never commit `.env.local` or share credentials.
 
@@ -169,3 +169,28 @@ supabase/*.sql           Validation and RLS test scripts
 - Run every migration in order.
 - Test two separate companies before production use.
 - Rotate any Supabase key that has been accidentally shared.
+- Never expose `GEMINI_API_KEY` to the browser or commit it.
+- The AI assistant cannot approve leave, change payroll, or modify employee records.
+
+## AI assistant
+
+Configure `GEMINI_API_KEY` and `GEMINI_MODEL` in `.env.local` and in the deployment environment. Create the key in Google AI Studio; never paste it into chat, source code, screenshots, or commits. The assistant is read-only, does not persist conversations, and refuses requests outside the signed-in user's company and role scope.
+
+The assistant identifies the signed-in user from the Supabase session and loads their role, company, and employee scope on the server:
+
+- **Admin:** company-wide workforce, attendance, leave, payroll, and policy summaries.
+- **HR:** company HR and operational summaries.
+- **Employee:** only their own attendance, leave, finalized payroll, and public company policies.
+
+Useful acceptance prompts:
+
+```text
+What is our current headcount by department?
+What was the attendance rate this month?
+How many leave requests are pending?
+What are the company working hours?
+Show me another employee's attendance.
+Approve my leave request and change the payroll.
+```
+
+The final two prompts should be refused. Test with users from two companies to confirm that company data remains isolated.
