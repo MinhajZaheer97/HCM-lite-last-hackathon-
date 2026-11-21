@@ -33,6 +33,23 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# planning and local reference files
+plan.md
+ui-plan.md
+sample-dashboard.html
+dashboard pic.jpg
+hcm lite logo pic.jpg
+
+# editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# logs and temporary files
+*.log
+*.tmp
+
 # vercel
 .vercel
 

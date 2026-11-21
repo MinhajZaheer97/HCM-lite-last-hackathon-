@@ -7,11 +7,7 @@ export function Table({ className = "", ...props }) {
 }
 
 export function THead({ children }) {
-  return (
-    <thead className="border-b border-border text-xs uppercase tracking-wide text-ink-muted">
-      {children}
-    </thead>
-  );
+  return <thead className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[11px] uppercase tracking-[0.06em] text-[#64748B]">{children}</thead>;
 }
 
 export function TH({ className = "", ...props }) {
@@ -19,7 +15,7 @@ export function TH({ className = "", ...props }) {
 }
 
 export function TBody({ children }) {
-  return <tbody className="divide-y divide-border">{children}</tbody>;
+  return <tbody className="divide-y divide-[#E2E8F0]">{children}</tbody>;
 }
 
 export function TR({ className = "", ...props }) {

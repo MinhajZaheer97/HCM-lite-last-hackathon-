@@ -13,17 +13,17 @@ export default async function HrDashboard() {
   ]);
   const summary = attendanceSummary(records ?? []);
   return (
-    <>
-      <PageHeader title="HR Dashboard" description={`Day-to-day metrics for ${today}.`} />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-5">
+      <PageHeader title="Dashboard" description={`Workforce operations for ${today}.`} />
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Headcount", headcount(employees ?? [], today)],
           ["Present today", summary.counts.present + summary.counts.late],
           ["On leave today", summary.counts.on_leave],
           ["Late today", summary.counts.late],
-        ].map(([label, value]) => <Card key={label}><CardBody><p className="text-xs font-medium uppercase tracking-wide text-ink-muted">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p></CardBody></Card>)}
+        ].map(([label, value]) => <Card key={label}><CardBody className="p-5"><div className="flex items-center justify-between"><p className="text-[13px] font-medium text-[#64748B]">{label}</p><span className="grid h-9 w-9 place-items-center rounded-lg bg-[#EFF6FF] text-xs font-bold text-[#2563EB]">HR</span></div><p className="mt-3 text-[28px] font-bold leading-none tracking-[-0.02em] text-[#10264A]">{value}</p></CardBody></Card>)}
       </div>
-      <Card className="mt-4"><CardHeader title="Pending leave approvals" /><CardBody>{pending?.length ? <p className="text-sm">{pending.length} request(s) awaiting review. <a className="text-brand-700 hover:underline" href="/hr/leave">Review requests</a></p> : <EmptyState title="No pending approvals" description="New leave requests will appear here." icon="✅" />}</CardBody></Card>
-    </>
+      <Card><CardHeader title="Pending leave approvals" /><CardBody>{pending?.length ? <p className="text-[13px] text-[#64748B]">{pending.length} request(s) awaiting review. <a className="font-semibold text-[#2563EB] hover:text-[#1D4ED8]" href="/hr/leave">Review requests →</a></p> : <EmptyState title="No pending approvals" description="New leave requests will appear here." icon="✅" />}</CardBody></Card>
+    </div>
   );
 }

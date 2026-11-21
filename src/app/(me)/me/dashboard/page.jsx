@@ -28,5 +28,15 @@ export default async function EmployeeDashboard() {
   const hours = (weekRecords ?? []).reduce((sum, record) => sum + Number(record.worked_minutes ?? 0), 0) / 60;
   const used = (leaves ?? []).reduce((map, leave) => { map[leave.leave_type_id] = (map[leave.leave_type_id] ?? 0) + Number(leave.days); return map; }, {});
   const leaveBalance = (leaveTypes ?? []).reduce((sum, type) => sum + Math.max(0, Number(type.annual_days) - (used[type.id] ?? 0)), 0);
-  return <><PageHeader title="My Dashboard" description="Your attendance, leave, and payroll at a glance." /><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{[["Check-in", todayRecord?.check_in ? "Recorded" : "Not yet"], ["Hours this week", `${hours.toFixed(1)} / 40h`], ["Late arrivals", (weekRecords ?? []).filter((record) => record.status === "late").length], ["Leave balance", `${leaveBalance} day(s)`]].map(([label, value]) => <Card key={label}><CardBody><p className="text-xs font-medium uppercase tracking-wide text-ink-muted">{label}</p><p className="mt-2 text-2xl font-semibold">{value}</p></CardBody></Card>)}</div><Card className="mt-4"><CardHeader title="Latest payslip" /><CardBody>{payslip ? <p className="text-sm">Period {payslip.payroll_runs?.period_month?.slice(0, 7)} · net {Number(payslip.net).toFixed(2)} · <a className="text-brand-700 hover:underline" href="/me/payslips">View payslips</a></p> : <EmptyState title="No finalized payslip" description="A finalized payroll payslip will appear here." icon="🧾" />}</CardBody></Card></>;
+  return (
+    <div className="space-y-5">
+      <PageHeader title="My Dashboard" description="Your attendance, leave, and payroll at a glance." />
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        {[["Check-in", todayRecord?.check_in ? "Recorded" : "Not yet"], ["Hours this week", `${hours.toFixed(1)} / 40h`], ["Late arrivals", (weekRecords ?? []).filter((record) => record.status === "late").length], ["Leave balance", `${leaveBalance} day(s)`]].map(([label, value]) =>
+          <Card key={label}><CardBody className="p-5"><p className="text-[13px] font-medium text-[#64748B]">{label}</p><p className="mt-3 text-[28px] font-bold leading-none tracking-[-0.02em] text-[#10264A]">{value}</p></CardBody></Card>
+        )}
+      </div>
+      <Card><CardHeader title="Latest payslip" /><CardBody>{payslip ? <p className="text-[13px] text-[#64748B]">Period {payslip.payroll_runs?.period_month?.slice(0, 7)} · net {Number(payslip.net).toFixed(2)} · <a className="font-semibold text-[#2563EB] hover:text-[#1D4ED8]" href="/me/payslips">View payslips →</a></p> : <EmptyState title="No finalized payslip" description="A finalized payroll payslip will appear here." icon="🧾" />}</CardBody></Card>
+    </div>
+  );
 }

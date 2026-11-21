@@ -23,7 +23,7 @@ export default function Modal({ open, onClose, title, children, footer }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 w-full max-w-lg rounded-xl border border-border bg-surface shadow-lg"
+        className="relative z-10 w-full max-w-lg rounded-xl border border-[#E2E8F0] bg-white shadow-[0_18px_50px_rgba(11,31,58,0.18)]"
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="text-sm font-semibold text-ink">{title}</h2>

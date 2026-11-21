@@ -71,7 +71,7 @@ export default function SimpleCrud({
       {rows.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} icon="🗂️" />
       ) : (
-        <div className="rounded-xl border border-border bg-surface shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-[#E2E8F0] bg-white shadow-[0_1px_3px_rgba(11,31,58,0.04),0_4px_12px_rgba(11,31,58,0.02)]">
           <Table>
             <THead>
               <tr>

@@ -4,9 +4,19 @@
  * HCM Lite design tokens (Tailwind v4 CSS-first config).
  * Brand scale + semantic colors used across the UI kit.
  */
+
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-navy-950: #071529;
+  --color-navy-900: #0b1f3a;
+  --color-navy-800: #10264a;
+  --color-navy-700: #1a3660;
+  --color-brand-primary: #2563eb;
+  --color-accent-blue: #3b82f6;
+  --color-canvas: #f5f8fd;
+  --color-border-subtle: #e2e8f0;
 
   --color-brand-50: #eef2ff;
   --color-brand-100: #e0e7ff;
@@ -42,4 +52,21 @@
 body {
   background: var(--color-surface-muted);
   color: var(--color-ink);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

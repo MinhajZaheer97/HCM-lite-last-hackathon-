@@ -1,6 +1,6 @@
 const variants = {
   primary:
-    "bg-brand-600 text-white hover:bg-brand-700 focus-visible:outline-brand-600 disabled:bg-brand-300",
+    "bg-[#2563EB] text-white hover:bg-[#1D4ED8] focus-visible:outline-[#2563EB] disabled:bg-[#93C5FD]",
   secondary:
     "border border-border bg-surface text-ink hover:bg-surface-muted focus-visible:outline-brand-600 disabled:text-ink-muted",
   danger:

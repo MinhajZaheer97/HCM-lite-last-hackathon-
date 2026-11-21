@@ -1,16 +1,20 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { getCurrentProfile, isSetupComplete, roleHome } from "@/lib/auth";
+import LandingPage from "@/components/landing/LandingPage";
 
-// Boot router: /setup when unconfigured, /login when signed out, the
-// signed-in user's role dashboard otherwise. `connection()` marks this
-// route dynamic (request-time data) under cacheComponents.
+export const metadata = {
+  title: "HCM Lite — Human Capital Management",
+  description: "Manage attendance, leave, payroll, employees, and HR operations with HCM Lite.",
+};
+
+// Public landing page for signed-out visitors. Preserve setup and signed-in routing.
 export default async function Home() {
   await connection();
 
   if (!(await isSetupComplete())) redirect("/setup");
   const { user, profile } = await getCurrentProfile();
-  if (!user || !profile) redirect("/login");
+  if (!user || !profile) return <LandingPage />;
   if (!profile.company_id) redirect("/setup");
 
   redirect(roleHome[profile.role] ?? "/login");
